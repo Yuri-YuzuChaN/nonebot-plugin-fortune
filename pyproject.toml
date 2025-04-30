@@ -1,0 +1,31 @@
+[project]
+name = "nonebot-plugin-fortune"
+version = "0.0.1"
+authors = [
+    { name="Yuri-YuzuChaN", email="806235364@qq.com" }
+]
+description = "Fortune divination!"
+requires-python = ">=3.9, <3.13"
+readme = "README.md"
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+keywords = ["nonebot2", "nonebot-plugin", "Fortune"]
+dependencies = [
+    "nonebot2<3.0.0,>=2.0.0",
+    "nonebot-adapter-onebot<3.0.0,>=2.2.2",
+    "nonebot-plugin-apscheduler<1.0.0,>=0.3.0",
+    "aiofiles<24.0.0,>=23.2.1",
+    "httpx<1.0.0,>=0.23.1",
+    "pillow<11.0.0,>=10.0.0",
+    "pydantic<3.0.0,>=2.0.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Yuri-YuzuChaN/nonebot-plugin-fortune"
+"Bug Tracker" = "https://github.com/Yuri-YuzuChaN/nonebot-plugin-fortune/issues"
+
+[tool.setuptools.package-data]
+"*" = ["maimaidxhelp.png"]

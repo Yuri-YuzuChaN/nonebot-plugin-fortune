@@ -1,6 +1,5 @@
 from nonebot import on_command, on_fullmatch, on_regex, require
 from nonebot.adapters.onebot.v11 import (
-    GROUP,
     GROUP_ADMIN,
     GROUP_OWNER,
     GroupMessageEvent,
@@ -19,8 +18,8 @@ require("nonebot_plugin_apscheduler")
 
 from nonebot_plugin_apscheduler import scheduler
 
-__fortune_version__ = "v0.5.0"
-__fortune_usages__ = f"""
+__fortune_version__ = "0.0.1"
+__fortune_usages__ = """
 [今日运势/抽签/运势] 一般抽签
 [xx抽签]     指定主题抽签
 [指定xx签] 指定特殊角色签底，需要自己尝试哦~
@@ -34,7 +33,7 @@ __plugin_meta__ = PluginMetadata(
     description="抽签！占卜你的今日运势🙏",
     usage=__fortune_usages__,
     type="application",
-    homepage="https://github.com/Yuri-YuzuChaN/nonebot_plugin_fortune_fix",
+    homepage="https://github.com/Yuri-YuzuChaN/nonebot-plugin-fortune",
     config=FortuneConfig,
     extra={
         "author": "Yuri-YuzuChaN <806235364@qq.com>",
@@ -47,35 +46,21 @@ async def _():
     await FortuneManager.load()
 
 
-general_divine  = on_command("今日运势", aliases={"抽签", "运势"}, permission=GROUP, priority=8)
-specific_divine = on_regex(r"^[^/]\S+抽签$", permission=GROUP, priority=8)
-limit_setting   = on_regex(r"^指定(.*?)签$", permission=GROUP, priority=8)
-themes_list     = on_fullmatch("主题列表", permission=GROUP, priority=8, block=True)
-show_themes     = on_regex("^查看(抽签)?主题$", permission=GROUP, priority=8, block=True)
+general_divine  = on_command("运势", aliases={"抽签"})
+specific_divine = on_regex(r"^[^/]\S+抽签$")
+limit_setting   = on_regex(r"^指定(.*?)签$")
+themes_list     = on_fullmatch("主题列表", block=True)
+show_themes     = on_regex("^查看(抽签)?主题$", block=True)
 change_theme    = on_regex(
     r"^设置(.*?)签$",
     permission=SUPERUSER | GROUP_ADMIN | GROUP_OWNER,
-    priority=8,
     block=True,
 )
 reset_themes    = on_regex(
     "^重置(抽签)?主题$",
     permission=SUPERUSER | GROUP_ADMIN | GROUP_OWNER,
-    priority=8,
     block=True,
 )
-
-
-@show_themes.handle()
-async def _(event: GroupMessageEvent):
-    fortune = FortuneManager(event.group_id)
-    theme = fortune.get_group_theme()
-    await show_themes.finish(f"当前群抽签主题：{FortuneThemesDict[theme][0]}")
-
-
-@themes_list.handle()
-async def _(event: GroupMessageEvent):
-    await themes_list.finish(get_available_themes())
 
 
 @general_divine.handle()
@@ -181,7 +166,19 @@ async def _(event: GroupMessageEvent):
     await reset_themes.finish("已重置当前群抽签主题为随机~")
 
 
+@show_themes.handle()
+async def _(event: GroupMessageEvent):
+    fortune = FortuneManager(event.group_id)
+    theme = fortune.get_group_theme()
+    await show_themes.finish(f"当前群抽签主题：{FortuneThemesDict[theme][0]}")
+
+
+@themes_list.handle()
+async def _(event: GroupMessageEvent):
+    await themes_list.finish(get_available_themes())
+
+
 @scheduler.scheduled_job("cron", hour=0, minute=0, misfire_grace_time=60)
 async def _():
-    FortuneManager.clean_out_pics()
+    clean_out_pics()
     logger.info("昨日运势图片已清空！")

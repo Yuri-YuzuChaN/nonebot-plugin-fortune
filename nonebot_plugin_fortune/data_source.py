@@ -17,6 +17,16 @@ def theme_flag_check(theme: str) -> bool:
     return config.model_dump().get(theme + "_flag", False)
 
 
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj) -> Union[str, Any]:
+        if isinstance(obj, datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S")
+        if isinstance(obj, date):
+            return obj.strftime("%Y-%m-%d")
+
+        return json.JSONEncoder.default(self, obj)
+
+
 class FortuneManager:
     
     _user_data: Dict[str, Dict[str, Dict[str, Union[str, int, date]]]]
@@ -33,7 +43,7 @@ class FortuneManager:
                     self.group_id: "random"
                 }
             )
-        self.group_rule = self.group_rule[self.group_id]
+        self.group_rule = self._group_rules[self.group_id]
         
         if self.group_id not in self._user_data:
             self._user_data[self.group_id] = {}
@@ -43,7 +53,7 @@ class FortuneManager:
             self.user_id = str(user_id)
             if user_id not in self.group_config:
                 self.group_config[self.user_id] = {
-                    "last_sign_date": 0
+                    "last_sign_date": date.today().strftime("%Y-%m-%d")
                 }
             self.user_config = self.group_config[self.user_id]
     
@@ -66,19 +76,20 @@ class FortuneManager:
         def decorator(func: Callable):
             async def wrapper(self: "FortuneManager", *args, **kwargs) -> Optional[bool]:
                 try:
-                    return await func(*args, **kwargs)
+                    return await func(self, *args, **kwargs)
                 finally:
                     _file = {
                         user_data_file: self._user_data,
                         group_rules_file: self._group_rules,
                         specific_rules_file: self._specific_rules,
                     }
-                    for _f, _d in zip(file, _file[file]):
-                        await self.save(_f, _d)
+                    for f in file:
+                        await self.save(f, _file[f])
             return wrapper
         return decorator
     
-    async def open(self, file: Path) -> Dict:
+    @classmethod
+    async def open(cls, file: Path) -> Dict:
         """
         打开文件并序列化
         """
@@ -90,8 +101,8 @@ class FortuneManager:
         保存文件
         """
         async with aiofiles.open(file, "w", encoding="utf-8") as f:
-            await f.write(json.dumps(data, ensure_ascii=False, indent=4))
-            
+            await f.write(json.dumps(data, ensure_ascii=False, indent=4, cls=DateTimeEncoder))
+    
     def get_group_theme(self) -> str:
         """
         获取群主题
